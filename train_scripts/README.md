@@ -29,4 +29,4 @@ bash train_scripts/DLinear/ETTh1_720/run.sh SOLVER.MAX_EPOCH 10
 
 Run `python script_tools/generate_experiment_scripts.py --check` after changing
 the experiment matrix. Run it without `--check` to regenerate the mirrored
-training scripts and checkpoint guards.
+training scripts, closed-form TTA scripts, and checkpoint guards.

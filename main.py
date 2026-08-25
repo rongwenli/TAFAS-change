@@ -7,7 +7,7 @@ from datasets.build import update_cfg_from_dataset
 from trainer import build_trainer
 from predictor import Predictor
 from utils.misc import set_seeds, set_devices
-from tta.tafas import build_adapter
+from tta.build import build_adapter
 from config import get_norm_module_cfg
 
 

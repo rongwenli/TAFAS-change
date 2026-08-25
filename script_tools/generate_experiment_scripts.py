@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Mirror TTA experiments with training scripts and checkpoint guards."""
+"""Generate training, TAFAS, and closed-form experiment script triplets."""
 
 from __future__ import annotations
 
@@ -12,6 +12,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 TTA_ROOT = ROOT / "scripts"
 TRAIN_ROOT = ROOT / "train_scripts"
+CLOSED_FORM_ROOT = ROOT / "closed_form_scripts"
 REQUIRED_VALUES = (
     "DATASET",
     "PRED_LEN",
@@ -38,6 +39,19 @@ SCRIPT_DIR="$(cd -- "$(dirname -- "${{BASH_SOURCE[0]}}")" && pwd)"
 PROJECT_ROOT="$(cd -- "${{SCRIPT_DIR}}/../../.." && pwd)"
 
 exec bash "${{PROJECT_ROOT}}/train_scripts/_run_training.sh" \\
+    "{model}" "{dataset}" "{pred_len}" "$@"
+'''
+
+
+def render_closed_form_wrapper(model: str, dataset: str, pred_len: str) -> str:
+    return f'''#!/usr/bin/env bash
+
+set -euo pipefail
+
+SCRIPT_DIR="$(cd -- "$(dirname -- "${{BASH_SOURCE[0]}}")" && pwd)"
+PROJECT_ROOT="$(cd -- "${{SCRIPT_DIR}}/../../.." && pwd)"
+
+exec bash "${{PROJECT_ROOT}}/closed_form_scripts/_run_closed_form.sh" \\
     "{model}" "{dataset}" "{pred_len}" "$@"
 '''
 
@@ -150,17 +164,24 @@ def main() -> int:
             )
 
         train_path = TRAIN_ROOT / relative
+        closed_form_path = CLOSED_FORM_ROOT / relative
         train_text = render_training_wrapper(
+            values["MODEL"], values["DATASET"], values["PRED_LEN"]
+        )
+        closed_form_text = render_closed_form_wrapper(
             values["MODEL"], values["DATASET"], values["PRED_LEN"]
         )
         tta_text = render_tta(values)
         all_current &= compare_or_write(train_path, train_text, args.check)
+        all_current &= compare_or_write(
+            closed_form_path, closed_form_text, args.check
+        )
         all_current &= compare_or_write(tta_path, tta_text, args.check)
 
     if args.check:
-        print(f"checked {len(tta_scripts)} TTA/training script pairs")
+        print(f"checked {len(tta_scripts)} experiment script triplets")
     else:
-        print(f"generated {len(tta_scripts)} TTA/training script pairs")
+        print(f"generated {len(tta_scripts)} experiment script triplets")
     return 0 if all_current else 1
 
 
